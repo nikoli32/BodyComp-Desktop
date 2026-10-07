@@ -11,7 +11,9 @@
 
   function recoveryLabel(status) {
     if (status === "ready") return "ready to train";
-    if (status === "needs_recovery") return "recovering";
+    if (["needs_recovery", "light", "moderate", "high"].includes(status)) {
+      return "recovering";
+    }
     return "recovery status loading";
   }
 

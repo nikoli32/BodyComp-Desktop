@@ -2,11 +2,11 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { openRawDatabase } = require("./database");
+const { migrateDatabase, openRawDatabase } = require("./database");
 
 const backupFormat = "bodycomp-backup";
 const backupVersion = 1;
-const databaseVersion = 2;
+const databaseVersion = 3;
 const maximumBackupBytes = 512 * 1024 * 1024;
 const tableNames = [
   "profiles",
@@ -275,6 +275,12 @@ function createBackupService({ database, dialog, databasePath }) {
         passphrase,
       );
       fs.writeFileSync(sourcePath, databaseBytes, { flag: "wx" });
+      const importedDatabase = openRawDatabase(sourcePath);
+      try {
+        migrateDatabase(importedDatabase);
+      } finally {
+        importedDatabase.close();
+      }
       validateDatabase(sourcePath);
 
       const confirmation = await dialog.showMessageBox({

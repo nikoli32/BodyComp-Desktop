@@ -42,6 +42,20 @@
     });
     roleLabel.append(roleSelect);
 
+    const loadFactorLabel = document.createElement("label");
+    loadFactorLabel.textContent = "Load factor";
+    const loadFactorInput = document.createElement("input");
+    loadFactorInput.type = "number";
+    loadFactorInput.min = "0.1";
+    loadFactorInput.max = "2";
+    loadFactorInput.step = "0.1";
+    loadFactorInput.value = String(assignment.loadFactor ?? 1);
+    loadFactorInput.setAttribute("aria-label", "Muscle load factor from 0.1 to 2.0");
+    loadFactorInput.addEventListener("input", () => {
+      assignment.loadFactor = Number(loadFactorInput.value);
+    });
+    loadFactorLabel.append(loadFactorInput);
+
     const removeButton = document.createElement("button");
     removeButton.className = "remove-muscle-button";
     removeButton.type = "button";
@@ -53,7 +67,7 @@
       renderRows();
     });
 
-    row.append(muscleLabel, roleLabel, removeButton);
+    row.append(muscleLabel, roleLabel, loadFactorLabel, removeButton);
     return row;
   }
 
@@ -119,6 +133,7 @@
       muscleGroupId:
         muscleGroups.find((group) => group.slug === muscle.slug)?.id ?? "",
       role: muscle.role,
+      loadFactor: muscle.loadFactor ?? 1,
     }));
     const renderRows = () => {
       rows.replaceChildren(
@@ -128,11 +143,11 @@
       );
     };
     addPrimary.addEventListener("click", () => {
-      assignments.push({ muscleGroupId: "", role: "primary" });
+      assignments.push({ muscleGroupId: "", role: "primary", loadFactor: 1 });
       renderRows();
     });
     addSecondary.addEventListener("click", () => {
-      assignments.push({ muscleGroupId: "", role: "secondary" });
+      assignments.push({ muscleGroupId: "", role: "secondary", loadFactor: 1 });
       renderRows();
     });
     renderRows();
@@ -146,6 +161,7 @@
       const muscles = assignments.map((assignment) => ({
         muscleGroupId: Number(assignment.muscleGroupId),
         role: assignment.role,
+        loadFactor: Number(assignment.loadFactor),
       }));
       if (muscles.some((muscle) => !muscle.muscleGroupId)) {
         exerciseStatus.textContent = "Choose a muscle group for every row.";
@@ -155,6 +171,11 @@
       if (!muscles.some((muscle) => muscle.role === "primary")) {
         exerciseStatus.textContent =
           "Choose at least one primary muscle target.";
+        exerciseStatus.className = "form-status error";
+        return;
+      }
+      if (muscles.some((muscle) => !Number.isFinite(muscle.loadFactor) || muscle.loadFactor < 0.1 || muscle.loadFactor > 2)) {
+        exerciseStatus.textContent = "Enter a load factor from 0.1 to 2.0 for every muscle.";
         exerciseStatus.className = "form-status error";
         return;
       }
@@ -168,7 +189,7 @@
         return;
       }
 
-      const controls = form.querySelectorAll("button, select");
+      const controls = form.querySelectorAll("button, select, input");
       controls.forEach((control) => {
         control.disabled = true;
       });
@@ -184,6 +205,7 @@
           muscleGroupId:
             muscleGroups.find((group) => group.slug === muscle.slug)?.id ?? "",
           role: muscle.role,
+            loadFactor: muscle.loadFactor ?? 1,
         }));
         renderRows();
         exerciseStatus.textContent = "Muscle groups saved.";

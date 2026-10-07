@@ -3,7 +3,11 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { openDatabase, openRawDatabase } = require("../electron/database");
+const {
+  getDatabasePath,
+  openDatabase,
+  openRawDatabase,
+} = require("../electron/database");
 const { decodeBackup, encodeBackup } = require("../electron/backup");
 const { createService } = require("../electron/service");
 
@@ -37,6 +41,16 @@ test("profiles persist data independently and validate stored operations", (t) =
     },
   ]);
   assert.equal(firstProfile.email, "first@example.test");
+  assert.equal(
+    context.database
+      .prepare(
+        `SELECT em.load_factor AS loadFactor
+         FROM exercise_muscles em JOIN exercises e ON e.id = em.exercise_id
+         WHERE e.profile_id = ? LIMIT 1`,
+      )
+      .get(firstProfile.id).loadFactor,
+    1,
+  );
 
   const exercise = service.invoke("exercises:create", [
     {
@@ -133,12 +147,97 @@ test("migrations are idempotent when reopening the user database", (t) => {
   const first = openDatabase(databasePath);
   first.close();
   const reopened = openDatabase(databasePath);
-  assert.equal(reopened.pragma("user_version", { simple: true }), 2);
+  assert.equal(reopened.pragma("user_version", { simple: true }), 3);
+  assert.ok(
+    reopened
+      .pragma("table_info(exercise_muscles)")
+      .some((column) => column.name === "load_factor"),
+  );
   assert.equal(
     reopened.prepare("SELECT count(*) AS count FROM muscle_groups").get().count,
     18,
   );
   reopened.close();
+});
+
+test("recovery service learns muscle duration after three repeat transitions", (t) => {
+  const context = createTestService();
+  t.after(() => context.close());
+  const { service, database } = context;
+  service.invoke("auth:register", [
+    {
+      email: "recovery@example.test",
+      displayName: "Recovery Profile",
+      password: "recovery-password-1",
+    },
+  ]);
+  const exercise = database
+    .prepare("SELECT id FROM exercises WHERE name = ?")
+    .get("Barbell bench press");
+  const now = Date.now();
+
+  for (const ageHours of [120, 84, 48, 24]) {
+    const startedAt = new Date(now - ageHours * 3_600_000).toISOString();
+    service.invoke("workouts:create", [
+      {
+        startedAt,
+        finishedAt: startedAt,
+        exercises: [
+          {
+            exerciseId: exercise.id,
+            sets: [
+              {
+                weightKg: 60,
+                reps: 8,
+                rir: 2,
+                completedAt: startedAt,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  }
+
+  const pectorals = service
+    .invoke("recovery:get", [])
+    .find((muscle) => muscle.slug === "pectorals");
+  assert.equal(pectorals.recoveryEstimateLearned, true);
+  assert.equal(pectorals.recoveryHistorySamples, 3);
+  assert.equal(pectorals.recoveryHours, 36);
+  assert.equal(pectorals.status, "ready");
+  assert.equal(pectorals.totalSets, 3);
+  assert.deepEqual(pectorals.contributingExercises, ["Barbell bench press"]);
+  assert.equal(pectorals.averageRir, 2);
+  assert.equal(typeof pectorals.estimatedReadyAt, "string");
+});
+
+test("new app database path leaves the legacy database untouched", (t) => {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), "bodycomp-legacy-data-test-"),
+  );
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+
+  const legacyPath = path.join(directory, "bodycomp.sqlite");
+  const legacy = openRawDatabase(legacyPath);
+  legacy.exec("CREATE TABLE legacy_exercises (name TEXT NOT NULL)");
+  legacy.prepare("INSERT INTO legacy_exercises (name) VALUES (?)").run("Saved exercise");
+  legacy.pragma("user_version = 0");
+  legacy.close();
+
+  const currentPath = getDatabasePath(directory);
+  assert.equal(path.basename(currentPath), "bodycomp-v2.sqlite");
+  const current = openDatabase(currentPath);
+  assert.equal(current.pragma("user_version", { simple: true }), 3);
+  current.close();
+
+  const preservedLegacy = openRawDatabase(legacyPath, { readonly: true });
+  assert.equal(preservedLegacy.pragma("user_version", { simple: true }), 0);
+  assert.equal(
+    preservedLegacy.prepare("SELECT name FROM legacy_exercises").get().name,
+    "Saved exercise",
+  );
+  preservedLegacy.close();
 });
 
 test("encrypted backups validate before replacing profiles and records", async (t) => {
@@ -232,6 +331,56 @@ test("encrypted backups validate before replacing profiles and records", async (
     fs.readdirSync(
       path.join(path.dirname(context.database.name), "restore-safety"),
     ).length,
+    1,
+  );
+});
+
+test("restore upgrades encrypted schema-v2 backups before replacing data", async (t) => {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), "bodycomp-v2-backup-test-"),
+  );
+  const backupPath = path.join(directory, "v2.bodycomp");
+  const dialog = {
+    showOpenDialog: async () => ({ canceled: false, filePaths: [backupPath] }),
+    showMessageBox: async () => ({ response: 0 }),
+  };
+  const context = createTestService(dialog);
+  t.after(() => {
+    context.close();
+    fs.rmSync(directory, { recursive: true, force: true });
+  });
+
+  const { service, database } = context;
+  service.invoke("auth:register", [
+    {
+      email: "v2-restore@example.test",
+      displayName: "V2 Restore",
+      password: "v2-restore-password",
+    },
+  ]);
+  const v2DatabasePath = path.join(directory, "v2.sqlite");
+  await database.backup(v2DatabasePath);
+  const v2Database = openRawDatabase(v2DatabasePath);
+  v2Database.exec("ALTER TABLE exercise_muscles DROP COLUMN load_factor");
+  v2Database.pragma("user_version = 2");
+  v2Database.close();
+  fs.writeFileSync(
+    backupPath,
+    JSON.stringify(
+      encodeBackup(fs.readFileSync(v2DatabasePath), "correct horse battery"),
+    ),
+  );
+
+  const restored = await service.invoke("backup:restore", [
+    { passphrase: "correct horse battery" },
+  ]);
+  assert.equal(restored.restored, true);
+  service.invoke("auth:login", [
+    { email: "v2-restore@example.test", password: "v2-restore-password" },
+  ]);
+  assert.equal(database.pragma("user_version", { simple: true }), 3);
+  assert.equal(
+    database.prepare("SELECT min(load_factor) AS factor FROM exercise_muscles").get().factor,
     1,
   );
 });

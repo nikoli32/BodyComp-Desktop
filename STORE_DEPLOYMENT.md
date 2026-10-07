@@ -4,7 +4,7 @@
 
 This repository contains a local Electron desktop foundation and Store packaging configuration; it is not yet a submitted or certified Store release. The current Electron Forge MSIX maker builds `.msix` packages but is marked experimental by its maintainers. Pin the toolchain and validate every update.
 
-The renderer loads packaged files and calls a name-allowlisted, validated `contextBridge`/IPC API. SQLite and migrations run in Electron's main process using its bundled Node `node:sqlite` module. There is no local HTTP listener, backend child process, cloud API, or automatic sync. On Windows, live data is stored in `%APPDATA%\bodycomp-desktop`.
+The renderer loads packaged files and calls a name-allowlisted, validated `contextBridge`/IPC API. SQLite and migrations run in Electron's main process using its bundled Node `node:sqlite` module. There is no local HTTP listener, backend child process, cloud API, or automatic sync. On Windows, current app data is stored in `%APPDATA%\bodycomp-desktop\bodycomp-v2.sqlite`.
 
 Node's current documentation classifies `node:sqlite` as Stability 1.2, Release Candidate. Electron 44 is pinned and its runtime is exercised by the packaged-app smoke check, but review this API's stability and compatibility before every Store submission/update. If its status or behavior is unsuitable, replace it with a maintained SQLite binding and add the required native build/rebuild prerequisites.
 
@@ -12,9 +12,13 @@ Profiles are local accounts with salted scrypt password hashes. The active profi
 
 The renderer imports the former `bodycomp-weight-unit` browser preference on first settings read when that value remains accessible. A change from a loopback HTTP origin to packaged `file:` pages can make the old browser storage inaccessible; verify the selected unit during upgrade testing.
 
-The previous backend and SQLite schema referenced by the old README were absent from this checkout. This implementation creates a new `bodycomp.sqlite` database and has no importer for records from an older desktop build. If earlier builds have user data, identify their database location/schema and implement and test a migration before upgrading those users.
+Legacy data import is deliberately deferred. This release creates and migrates `bodycomp-v2.sqlite`; it does not import records from the earlier PostgreSQL or SQLite stores. The prior `%APPDATA%\bodycomp-desktop\bodycomp.sqlite` is not opened or migrated, and remains available for a later importer. A consistent pre-conversion snapshot was saved under `%LOCALAPPDATA%\BodyComp\migration-backups`. Keep legacy data and the prior app until an import tool is added and verified; users should expect a fresh local profile in this release.
 
-Recovery demand is currently reconstructed from logged sets with role weighting and exponential time decay. The former backend's recovery algorithm was not present to port, so confirm this model and its thresholds with the domain owner before Store release.
+Recovery uses a reconstructed version of the earlier model described in the handoff; it is not an exact source port. For each weighted set, estimated 1RM uses Epley with effective reps `clamp(reps + 10 - RIR, 1, 12)` and missing RIR defaults to 2. Set stimulus is `14 × relativeIntensity × effortFactor × repetitionFactor × loadFactor`, where relative intensity is set weight divided by estimated 1RM, effort factor is `1 + (10 - RIR) / 10`, repetition factor is effective reps divided by 12, and load factor is stored per exercise-muscle assignment (0.1–2.0, default 1.0). Custom-exercise assignments expose this control; starter-catalog assignments currently remain at 1.0. Set and workout-session demands combine multiplicatively, then decay linearly to zero over the recovery duration.
+
+The starting recovery duration is 48 hours and durations are bounded to 18–96 hours. Repeat-exercise transitions compare consecutive estimated 1RMs; after at least three transitions for a muscle, the median observed interval (with a penalty for performance declines) becomes that muscle's learned duration. Readiness is binary: demand at or below 20 is `ready`, otherwise `needs_recovery`. The muscle list and detail view use these statuses and expose the demand, history sample count, last training time, and estimated ready time.
+
+The coefficients, RIR-to-effective-reps conversion, performance-decline penalty, and readiness threshold are explicit reconstruction choices because the legacy implementation source was unavailable in this checkout. Review them against the domain requirements before describing the result as equivalent to the prior model or submitting it as a validated training recommendation.
 
 ## Prerequisites
 
@@ -74,7 +78,7 @@ Run `npm test`, then verify each release candidate on a clean Windows VM with ne
 - Export an encrypted backup; verify wrong passphrases, malformed files, unsupported schema versions, and failed restores leave current data unchanged.
 - Restore a valid backup, verify the replacement prompt and pre-restore snapshot, sign in again, and verify restored profiles and settings.
 - Confirm the packaged process opens local files, opens no listener, and starts no backend process. Verify SQLite and migrations are in the package.
-- Install and update the signed MSIX. Confirm `%APPDATA%\bodycomp-desktop` persists across updates. Test uninstall separately and disclose actual retention behavior.
+- Install and update the signed MSIX. Confirm `%APPDATA%\bodycomp-desktop\bodycomp-v2.sqlite` persists across updates and the legacy `bodycomp.sqlite` remains unchanged. Test uninstall separately and disclose actual retention behavior.
 - Run Windows SDK and Store package validation. Record logs, package hash, architecture, and version for submission notes.
 
 Do not submit until the package has been tested with final publisher identity, signing, icons, privacy text, and the clean-install/update path. A development self-signed package is not a Store submission package.

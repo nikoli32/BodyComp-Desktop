@@ -472,7 +472,7 @@ h2 {
 }
 
 .custom-muscle-row {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.5fr) auto;
   align-items: end;
 }
 
@@ -511,7 +511,7 @@ h2 {
 
 .custom-workout-assignment-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.45fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.4fr) minmax(110px, 0.4fr) auto;
   align-items: end;
   gap: 10px;
 }

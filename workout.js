@@ -56,6 +56,20 @@
         assignment.muscleGroupId = event.target.value;
       });
 
+      const loadFactorLabel = document.createElement("label");
+      loadFactorLabel.textContent = "Load factor";
+      const loadFactorInput = document.createElement("input");
+      loadFactorInput.type = "number";
+      loadFactorInput.min = "0.1";
+      loadFactorInput.max = "2";
+      loadFactorInput.step = "0.1";
+      loadFactorInput.value = String(assignment.loadFactor ?? 1);
+      loadFactorInput.setAttribute("aria-label", "Muscle load factor from 0.1 to 2.0");
+      loadFactorInput.addEventListener("input", () => {
+        assignment.loadFactor = Number(loadFactorInput.value);
+      });
+      loadFactorLabel.append(loadFactorInput);
+
       const removeButton = document.createElement("button");
       removeButton.type = "button";
       removeButton.className = "remove-muscle-button";
@@ -70,19 +84,21 @@
       });
 
       label.append(select);
-      row.append(label, removeButton);
+      row.append(label, loadFactorLabel, removeButton);
       customMuscleRows.append(row);
     });
   }
 
   function addCustomMuscleRow(role) {
-    customMuscleAssignments.push({ role, muscleGroupId: "" });
+    customMuscleAssignments.push({ role, muscleGroupId: "", loadFactor: 1 });
     renderCustomMuscleRows();
   }
 
   function resetCustomExerciseForm() {
     customExerciseName.value = "";
-    customMuscleAssignments = [{ role: "primary", muscleGroupId: "" }];
+    customMuscleAssignments = [
+      { role: "primary", muscleGroupId: "", loadFactor: 1 },
+    ];
     renderCustomMuscleRows();
     customExerciseForm.hidden = true;
     setCustomExerciseStatus("");
@@ -283,6 +299,7 @@
           ? {
               muscleGroupId: Number(assignment.muscleGroupId),
               role: assignment.role,
+              loadFactor: assignment.loadFactor,
             }
           : null,
       )

@@ -1,7 +1,7 @@
 const path = require("node:path");
 const { pathToFileURL, fileURLToPath } = require("node:url");
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
-const { openDatabase } = require("./database");
+const { getDatabasePath, openDatabase } = require("./database");
 const { registerIpcHandlers } = require("./ipc");
 const { createService } = require("./service");
 
@@ -49,7 +49,7 @@ async function createWindow() {
 registerIpcHandlers({ ipcMain, getService: () => service, isAppFile });
 
 app.whenReady().then(async () => {
-  const databasePath = path.join(app.getPath("userData"), "bodycomp.sqlite");
+  const databasePath = getDatabasePath(app.getPath("userData"));
   const database = openDatabase(databasePath);
   service = createService({ database, dialog, databasePath });
   await createWindow();

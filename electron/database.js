@@ -3,6 +3,11 @@ const path = require("node:path");
 const { DatabaseSync, backup } = require("node:sqlite");
 
 const migrationsPath = path.join(__dirname, "migrations");
+const currentDatabaseFilename = "bodycomp-v2.sqlite";
+
+function getDatabasePath(userDataPath) {
+  return path.join(userDataPath, currentDatabaseFilename);
+}
 
 class SyncDatabase {
   constructor(databasePath, options = {}) {
@@ -58,13 +63,7 @@ function openRawDatabase(databasePath, options = {}) {
   return new SyncDatabase(databasePath, options);
 }
 
-function openDatabase(databasePath) {
-  fs.mkdirSync(path.dirname(databasePath), { recursive: true });
-  const database = openRawDatabase(databasePath);
-  database.pragma("foreign_keys = ON");
-  database.pragma("journal_mode = WAL");
-  database.pragma("busy_timeout = 5000");
-
+function migrateDatabase(database) {
   const migrations = fs
     .readdirSync(migrationsPath)
     .filter((file) => /^\d+_[a-z0-9_-]+\.sql$/i.test(file))
@@ -79,8 +78,22 @@ function openDatabase(databasePath) {
       database.pragma(`user_version = ${version}`);
     })();
   }
+}
+
+function openDatabase(databasePath) {
+  fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+  const database = openRawDatabase(databasePath);
+  database.pragma("foreign_keys = ON");
+  database.pragma("journal_mode = WAL");
+  database.pragma("busy_timeout = 5000");
+  migrateDatabase(database);
 
   return database;
 }
 
-module.exports = { openDatabase, openRawDatabase };
+module.exports = {
+  getDatabasePath,
+  migrateDatabase,
+  openDatabase,
+  openRawDatabase,
+};

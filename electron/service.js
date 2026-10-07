@@ -1,8 +1,16 @@
 const crypto = require("node:crypto");
 const { createBackupService } = require("./backup");
+const {
+  MAX_RECOVERY_HOURS,
+  calculateMuscleRecovery,
+  calculateSetStimulus,
+  combineDemands,
+  estimateOneRepMax,
+  estimateRecoveryDuration,
+  estimateTransitionHours,
+} = require("./recovery");
 
 const passwordBytes = 64;
-const recoveryWindowHours = 120;
 const starterExercises = [
   [
     "Barbell bench press",
@@ -190,6 +198,117 @@ function validNumber(
   return number;
 }
 
+function readMuscleRecovery(database, profileId, nowMilliseconds = Date.now()) {
+  const muscleGroups = database
+    .prepare("SELECT id, slug, name FROM muscle_groups ORDER BY id")
+    .all();
+  const rows = database
+    .prepare(
+      `SELECT w.id AS workoutId, w.started_at AS startedAt,
+              ws.completed_at AS completedAt, we.exercise_id AS exerciseId,
+              we.exercise_name AS exerciseName, em.muscle_group_id AS muscleGroupId,
+              em.role, em.load_factor AS loadFactor, ws.weight_kg AS weightKg,
+              ws.reps, ws.rir
+       FROM workouts w
+       JOIN workout_exercises we ON we.workout_id = w.id
+       JOIN workout_sets ws ON ws.workout_exercise_id = we.id
+       JOIN exercise_muscles em ON em.exercise_id = we.exercise_id
+       WHERE w.profile_id = ?
+       ORDER BY w.started_at, w.id, we.position, ws.position`,
+    )
+    .all(profileId);
+
+  const performanceBySession = new Map();
+  for (const row of rows) {
+    const strength = estimateOneRepMax(row.weightKg, row.reps, row.rir);
+    if (strength === null) continue;
+    const key = `${row.muscleGroupId}:${row.exerciseId}:${row.workoutId}`;
+    const performance = performanceBySession.get(key) || {
+      muscleGroupId: row.muscleGroupId,
+      exerciseId: row.exerciseId,
+      startedAt: row.startedAt,
+      strength: 0,
+    };
+    performance.strength = Math.max(performance.strength, strength);
+    performanceBySession.set(key, performance);
+  }
+
+  const performancesByExercise = new Map();
+  for (const performance of performanceBySession.values()) {
+    const key = `${performance.muscleGroupId}:${performance.exerciseId}`;
+    const history = performancesByExercise.get(key) || [];
+    history.push(performance);
+    performancesByExercise.set(key, history);
+  }
+
+  const transitionsByMuscle = new Map();
+  for (const [key, history] of performancesByExercise) {
+    history.sort((left, right) => Date.parse(left.startedAt) - Date.parse(right.startedAt));
+    const muscleGroupId = Number(key.split(":")[0]);
+    for (let index = 1; index < history.length; index += 1) {
+      const previous = history[index - 1];
+      const current = history[index];
+      const elapsedHours = (Date.parse(current.startedAt) - Date.parse(previous.startedAt)) / 3_600_000;
+      const transition = estimateTransitionHours(previous.strength, current.strength, elapsedHours);
+      if (transition === null) continue;
+      const estimates = transitionsByMuscle.get(muscleGroupId) || [];
+      estimates.push(transition);
+      transitionsByMuscle.set(muscleGroupId, estimates);
+    }
+  }
+
+  const sessionsByMuscle = new Map();
+  const cutoff = nowMilliseconds - MAX_RECOVERY_HOURS * 3_600_000;
+  for (const row of rows) {
+    if (Date.parse(row.completedAt) < cutoff) continue;
+    const key = `${row.muscleGroupId}:${row.workoutId}`;
+    const sessions = sessionsByMuscle.get(row.muscleGroupId) || new Map();
+    const session = sessions.get(key) || {
+      workoutId: row.workoutId,
+      startedAt: row.startedAt,
+      lastTrainedAt: row.completedAt,
+      stimulusParts: [],
+      totalSets: 0,
+      rirTotal: 0,
+      exercises: new Set(),
+    };
+    session.stimulusParts.push(calculateSetStimulus(row));
+    session.totalSets += 1;
+    session.rirTotal += row.rir === null ? 2 : Number(row.rir);
+    session.exercises.add(row.exerciseName);
+    if (Date.parse(row.completedAt) > Date.parse(session.lastTrainedAt)) {
+      session.lastTrainedAt = row.completedAt;
+    }
+    sessions.set(key, session);
+    sessionsByMuscle.set(row.muscleGroupId, sessions);
+  }
+
+  return muscleGroups.map((group) => {
+    const learned = estimateRecoveryDuration(transitionsByMuscle.get(group.id) || []);
+    const storedSessions = [...(sessionsByMuscle.get(group.id)?.values() || [])];
+    const sessions = storedSessions.map((session) => ({
+      ...session,
+      stimulus: combineDemands(session.stimulusParts),
+      recoveryHours: learned.recoveryHours,
+    }));
+    const recovery = calculateMuscleRecovery(sessions, nowMilliseconds);
+    const totalSets = storedSessions.reduce((total, session) => total + session.totalSets, 0);
+    const rirTotal = storedSessions.reduce((total, session) => total + session.rirTotal, 0);
+    const contributingExercises = [...new Set(storedSessions.flatMap((session) => [...session.exercises]))];
+    return {
+      ...group,
+      ...recovery,
+      totalSets,
+      contributingExercises,
+      averageRir: totalSets ? Math.round((rirTotal / totalSets) * 10) / 10 : null,
+      recoveryHours: learned.recoveryHours,
+      recoveryBaselineHours: learned.recoveryHours,
+      recoveryEstimateLearned: learned.recoveryEstimateLearned,
+      recoveryHistorySamples: learned.recoveryHistorySamples,
+    };
+  });
+}
+
 function createService({ database, dialog, databasePath }) {
   let db = database;
   const backup = createBackupService({ database, dialog, databasePath });
@@ -238,7 +357,8 @@ function createService({ database, dialog, databasePath }) {
   function getMuscles(exerciseId) {
     return db
       .prepare(
-        `SELECT mg.id AS muscleGroupId, mg.slug, mg.name, em.role
+        `SELECT mg.id AS muscleGroupId, mg.slug, mg.name, em.role,
+                em.load_factor AS loadFactor
        FROM exercise_muscles em JOIN muscle_groups mg ON mg.id = em.muscle_group_id
        WHERE em.exercise_id = ? ORDER BY mg.id`,
       )
@@ -269,15 +389,20 @@ function createService({ database, dialog, databasePath }) {
     return muscles.map((muscle) => ({
       muscleGroupId: Number(muscle.muscleGroupId),
       role: muscle.role,
+      loadFactor: validNumber(muscle.loadFactor, "Muscle load factor", {
+        optional: true,
+        min: 0.1,
+        max: 2,
+      }) ?? 1,
     }));
   }
 
   function insertMuscles(exerciseId, muscles) {
     const insert = db.prepare(
-      "INSERT INTO exercise_muscles (exercise_id, muscle_group_id, role) VALUES (?, ?, ?)",
+      "INSERT INTO exercise_muscles (exercise_id, muscle_group_id, role, load_factor) VALUES (?, ?, ?, ?)",
     );
     for (const muscle of muscles)
-      insert.run(exerciseId, muscle.muscleGroupId, muscle.role);
+      insert.run(exerciseId, muscle.muscleGroupId, muscle.role, muscle.loadFactor ?? 1);
   }
 
   function ownExercise(exerciseId, profileId = requireProfile()) {
@@ -589,70 +714,7 @@ function createService({ database, dialog, databasePath }) {
       return { avatarUrl };
     },
     "recovery:get()": () => {
-      const profileId = requireProfile();
-      const result = db
-        .prepare("SELECT id, slug, name FROM muscle_groups ORDER BY id")
-        .all()
-        .map((group) => ({
-          slug: group.slug,
-          name: group.name,
-          status: "ready",
-          recoveryDemand: 0,
-          lastTrainedAt: null,
-        }));
-      const groupsById = new Map(
-        db
-          .prepare("SELECT id, slug FROM muscle_groups")
-          .all()
-          .map((group) => [group.id, group.slug]),
-      );
-      const indexBySlug = new Map(
-        result.map((item, index) => [item.slug, index]),
-      );
-      const now = Date.now();
-      const activity = db
-        .prepare(
-          `SELECT em.muscle_group_id AS muscleGroupId, em.role, ws.completed_at AS completedAt,
-                ws.reps, ws.rir
-         FROM workouts w
-         JOIN workout_exercises we ON we.workout_id = w.id
-         JOIN workout_sets ws ON ws.workout_exercise_id = we.id
-         JOIN exercise_muscles em ON em.exercise_id = we.exercise_id
-         WHERE w.profile_id = ? AND ws.completed_at >= ?`,
-        )
-        .all(
-          profileId,
-          new Date(now - recoveryWindowHours * 3600_000).toISOString(),
-        );
-      for (const set of activity) {
-        const slug = groupsById.get(set.muscleGroupId);
-        const item = result[indexBySlug.get(slug)];
-        const completedAt = Date.parse(set.completedAt);
-        const ageHours = Math.max(0, (now - completedAt) / 3600_000);
-        const repsFactor = 1 + Math.min(Number(set.reps) || 0, 20) / 40;
-        const effortFactor = set.rir === null ? 1 : 1 + (10 - set.rir) / 20;
-        const roleFactor = set.role === "primary" ? 1 : 0.55;
-        item.recoveryDemand +=
-          18 *
-          repsFactor *
-          effortFactor *
-          roleFactor *
-          Math.exp(-ageHours / 36);
-        if (!item.lastTrainedAt || completedAt > Date.parse(item.lastTrainedAt))
-          item.lastTrainedAt = set.completedAt;
-      }
-      for (const item of result) {
-        item.recoveryDemand = Math.min(100, Math.round(item.recoveryDemand));
-        item.status =
-          item.recoveryDemand > 75
-            ? "high"
-            : item.recoveryDemand > 50
-              ? "moderate"
-              : item.recoveryDemand > 20
-                ? "light"
-                : "ready";
-      }
-      return result;
+      return readMuscleRecovery(db, requireProfile());
     },
     "bodyweight:list()": () => {
       const profileId = requireProfile();
