@@ -21,7 +21,8 @@ const msixConfig = {
   manifestVariables: {
     packageIdentity: identityName,
     publisher,
-    publisherDisplayName: process.env.MSIX_PUBLISHER_DISPLAY_NAME || "BodyComp",
+    publisherDisplayName:
+      process.env.MSIX_PUBLISHER_DISPLAY_NAME || "Kyle Bailey",
     packageVersion,
     packageDisplayName: "BodyComp Desktop",
     appDisplayName: "BodyComp Desktop",
