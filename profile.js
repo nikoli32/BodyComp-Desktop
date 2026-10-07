@@ -15,9 +15,8 @@
   const userIdEl = document.getElementById("userId");
 
   // --- Load user profile ---
-  async function loadProfile() {
+  async function loadProfile(user) {
     try {
-      const user = await window.MuscleRecoveryApi.getCurrentUser();
       if (!user) return;
 
       emailInput.value = user.email || "";
@@ -123,9 +122,8 @@
   });
 
   // --- Initialize ---
-  if (window.MuscleRecoveryApi.isLoggedIn()) {
-    loadProfile();
-  } else {
-    window.location.assign("auth.html");
-  }
+  window.MuscleRecoveryApi.getCurrentUser().then((user) => {
+    if (user) loadProfile(user);
+    else window.location.assign("auth.html");
+  }).catch(() => window.location.assign("auth.html"));
 })();

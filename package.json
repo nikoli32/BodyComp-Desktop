@@ -1,19 +1,30 @@
 {
   "name": "bodycomp-desktop",
   "version": "0.1.0",
+  "productName": "BodyComp Desktop",
+  "description": "An offline workout and body composition tracker.",
+  "author": "BodyComp Development",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
-    "desktop:dev": "npm run backend:build && electron .",
-    "backend:build": "npm --prefix backend run build",
-    "test": "node --test test/*.test.js",
-    "test:backend": "npm --prefix backend test",
-    "check:backend": "npm --prefix backend run check"
+    "postinstall": "node node_modules/electron/install.js",
+    "start": "electron .",
+    "desktop:dev": "electron .",
+    "test": "node --test",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "make:windows:x64": "electron-forge make --platform=win32 --arch=x64 --targets=@electron-forge/maker-msix",
+    "make:windows:arm64": "electron-forge make --platform=win32 --arch=arm64 --targets=@electron-forge/maker-msix",
+    "make:direct:x64": "electron-forge make --platform=win32 --arch=x64 --targets=@electron-forge/maker-zip",
+    "make:direct:arm64": "electron-forge make --platform=win32 --arch=arm64 --targets=@electron-forge/maker-zip"
   },
   "devDependencies": {
-    "electron": "^39.0.0"
+    "@electron-forge/cli": "^8.0.1",
+    "@electron-forge/maker-msix": "^8.0.1",
+    "@electron-forge/maker-zip": "^8.0.1",
+    "electron": "^44.6.0"
   },
   "allowScripts": {
-    "electron@39.8.10": true
+    "electron@44.6.0": true
   }
 }

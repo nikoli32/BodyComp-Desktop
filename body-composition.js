@@ -12,10 +12,9 @@
   const submitButton = document.querySelector("#measurementSubmit");
   const cancelEditButton = document.querySelector("#cancelMeasurementEdit");
   const { leanMassKg, weightFromKg, weightToKg } = window.MuscleMapUtils;
-  const unitStorageKey = "bodycomp-weight-unit";
   let measurements = [];
   let editingId = null;
-  let currentUnit = localStorage.getItem(unitStorageKey) || "lb";
+  let currentUnit = "lb";
 
   function localDateValue(date = new Date()) {
     const year = date.getFullYear();
@@ -176,7 +175,7 @@
     }
   });
 
-  function changeUnit(nextUnit) {
+  async function changeUnit(nextUnit) {
     const oldUnit = selectedUnit();
     const currentWeight = Number(weightInput.value);
     const hasWeight =
@@ -190,9 +189,24 @@
     currentUnit = nextUnit;
     unitInput.value = nextUnit;
     historyUnitInput.value = nextUnit;
-    localStorage.setItem(unitStorageKey, nextUnit);
     renderMeasurements();
     updatePreview();
+    try {
+      await window.MuscleRecoveryApi.updateSettings({ weightUnit: nextUnit });
+    } catch (error) {
+      if (hasWeight) {
+        weightInput.value = weightFromKg(
+          weightToKg(Number(weightInput.value), nextUnit),
+          oldUnit,
+        ).toFixed(2);
+      }
+      currentUnit = oldUnit;
+      unitInput.value = oldUnit;
+      historyUnitInput.value = oldUnit;
+      renderMeasurements();
+      updatePreview();
+      setStatus(error.message || "Unable to save weight unit.", "error");
+    }
   }
 
   unitInput.addEventListener("change", () => changeUnit(unitInput.value));
@@ -203,9 +217,19 @@
   bodyFatInput.addEventListener("input", updatePreview);
   cancelEditButton.addEventListener("click", resetForm);
 
-  unitInput.value = currentUnit;
-  historyUnitInput.value = unitInput.value;
-  dateInput.value = localDateValue();
-  updatePreview();
-  loadMeasurements();
+  async function initialize() {
+    try {
+      const settings = await window.MuscleRecoveryApi.getSettings();
+      currentUnit = settings.weightUnit;
+    } catch (error) {
+      setStatus(error.message || "Unable to load settings.", "error");
+    }
+    unitInput.value = currentUnit;
+    historyUnitInput.value = currentUnit;
+    dateInput.value = localDateValue();
+    updatePreview();
+    await loadMeasurements();
+  }
+
+  initialize();
 })();

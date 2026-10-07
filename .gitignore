@@ -3,6 +3,7 @@ backend/node_modules/
 backend/dist/
 backend/data/
 dist/
+out/
 release/
 .env
 backend/.env

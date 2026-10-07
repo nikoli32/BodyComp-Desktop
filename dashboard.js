@@ -20,7 +20,7 @@
     } catch (error) {
       totalGroups.textContent = "—";
       lastWorkout.textContent = "—";
-      statusMessage.textContent = `Unable to load recovery data. Start the API at ${window.MuscleRecoveryApi.apiBaseUrl}.`;
+      statusMessage.textContent = error.message || "Unable to load local recovery data.";
       console.error(error);
     }
   }

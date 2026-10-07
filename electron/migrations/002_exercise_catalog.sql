@@ -1,0 +1,2 @@
+ALTER TABLE exercises
+ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 1 CHECK (is_custom IN (0, 1));

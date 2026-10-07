@@ -40,5 +40,7 @@
     }
   });
 
-  window.MuscleRecoveryApi.getCurrentUser().then(() => window.location.assign("index.html")).catch(() => {});
+  window.MuscleRecoveryApi.getCurrentUser().then((user) => {
+    if (user) window.location.assign("index.html");
+  }).catch(() => {});
 })();

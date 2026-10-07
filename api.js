@@ -1,143 +1,80 @@
 (() => {
-  const defaultApiUrl =
-    window.location.protocol === "file:"
-      ? "http://localhost:3000"
-      : window.location.origin;
-  const apiBaseUrl = (window.MUSCLE_RECOVERY_API_URL || defaultApiUrl).replace(
-    /\/$/,
-    "",
-  );
+  let currentUser = null;
 
-  async function request(path, options = {}) {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-      credentials: "include",
-      headers: {
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...(options.headers || {}),
-      },
-      ...options,
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      if (
-        response.status === 401 &&
-        !window.location.pathname.endsWith("auth.html")
-      ) {
-        window.location.assign("auth.html");
-      }
-      throw new Error(body.error || `Request failed (${response.status}).`);
+  function invoke(method, ...args) {
+    if (!window.bodyCompDesktop) {
+      return Promise.reject(new Error("The desktop data service is unavailable."));
     }
-    if (response.status === 204) return null;
-    return response.json();
+    return window.bodyCompDesktop.invoke(method, ...args);
   }
 
-  async function getRecovery() {
-    return request("/api/muscles/recovery");
-  }
-
-  async function getBodyweightMeasurements() {
-    return request("/api/bodyweight");
-  }
-
-  async function createBodyweightMeasurement(measurement) {
-    return request("/api/bodyweight", {
-      method: "POST",
-      body: JSON.stringify(measurement),
+  async function updateAvatar(formData) {
+    const file = formData.get("avatar");
+    if (!(file instanceof File)) throw new Error("Choose an image first.");
+    return invoke("profile:update-avatar", {
+      mimeType: file.type,
+      data: await file.arrayBuffer(),
     });
   }
 
-  async function updateBodyweightMeasurement(id, measurement) {
-    return request(`/api/bodyweight/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(measurement),
-    });
+  async function getSettings() {
+    const settings = await invoke("settings:get");
+    let legacyUnit;
+    try {
+      legacyUnit = window.localStorage.getItem("bodycomp-weight-unit");
+    } catch {
+      return settings;
+    }
+    if (legacyUnit !== "lb" && legacyUnit !== "kg") return settings;
+
+    const migrated = await invoke("settings:update", { weightUnit: legacyUnit });
+    try {
+      window.localStorage.removeItem("bodycomp-weight-unit");
+    } catch {}
+    return migrated;
   }
 
-  async function deleteBodyweightMeasurement(id) {
-    return request(`/api/bodyweight/${id}`, { method: "DELETE" });
-  }
-
-  async function getExercises() {
-    return request("/api/exercises");
-  }
-
-  async function getCustomExercises() {
-    return request("/api/custom-exercises");
-  }
-
-  async function updateCustomExercise(id, muscles) {
-    return request(`/api/custom-exercises/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ muscles }),
-    });
-  }
-
-  async function deleteCustomExercise(id) {
-    return request(`/api/custom-exercises/${id}`, { method: "DELETE" });
-  }
-
-  async function getMuscleGroups() {
-    return request("/api/muscle-groups");
-  }
-
-  async function createExercise(exercise) {
-    return request("/api/exercises", {
-      method: "POST",
-      body: JSON.stringify(exercise),
-    });
-  }
-
-  async function createWorkout(workout) {
-    return request("/api/workouts", {
-      method: "POST",
-      body: JSON.stringify(workout),
-    });
-  }
-
-  async function getWorkouts() {
-    return request("/api/workouts");
-  }
-
-  async function updateWorkout(id, workout) {
-    return request(`/api/workouts/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(workout),
-    });
-  }
-
-  async function deleteWorkout(id) {
-    return request(`/api/workouts/${id}`, { method: "DELETE" });
-  }
-
-  window.MuscleRecoveryApi = {
-    apiBaseUrl,
-    getRecovery,
-    getBodyweightMeasurements,
-    createBodyweightMeasurement,
-    updateBodyweightMeasurement,
-    deleteBodyweightMeasurement,
-    getExercises,
-    getCustomExercises,
-    updateCustomExercise,
-    deleteCustomExercise,
-    getMuscleGroups,
-    createExercise,
-    createWorkout,
-    getWorkouts,
-    updateWorkout,
-    deleteWorkout,
-    getCurrentUser: () => request("/api/auth/me"),
-    register: (account) =>
-      request("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify(account),
-      }),
-    login: (credentials) =>
-      request("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-      }),
-    logout: () => request("/api/auth/logout", { method: "POST" }),
-    request,
+  const api = {
+    getRecovery: () => invoke("recovery:get"),
+    getBodyweightMeasurements: () => invoke("bodyweight:list"),
+    createBodyweightMeasurement: (measurement) => invoke("bodyweight:create", measurement),
+    updateBodyweightMeasurement: (id, measurement) => invoke("bodyweight:update", id, measurement),
+    deleteBodyweightMeasurement: (id) => invoke("bodyweight:delete", id),
+    getExercises: () => invoke("exercises:list"),
+    getCustomExercises: () => invoke("custom-exercises:list"),
+    updateCustomExercise: (id, muscles) => invoke("custom-exercises:update", id, muscles),
+    deleteCustomExercise: (id) => invoke("custom-exercises:delete", id),
+    getMuscleGroups: () => invoke("muscle-groups:list"),
+    createExercise: (exercise) => invoke("exercises:create", exercise),
+    createWorkout: (workout) => invoke("workouts:create", workout),
+    getWorkouts: () => invoke("workouts:list"),
+    updateWorkout: (id, workout) => invoke("workouts:update", id, workout),
+    deleteWorkout: (id) => invoke("workouts:delete", id),
+    getSettings,
+    updateSettings: (settings) => invoke("settings:update", settings),
+    exportBackup: (payload) => invoke("backup:export", payload),
+    restoreBackup: (payload) => invoke("backup:restore", payload),
+    getCurrentUser: async () => {
+      currentUser = await invoke("auth:current-user");
+      return currentUser;
+    },
+    isLoggedIn: () => Boolean(currentUser),
+    register: async (account) => {
+      currentUser = await invoke("auth:register", account);
+      return currentUser;
+    },
+    login: async (credentials) => {
+      currentUser = await invoke("auth:login", credentials);
+      return currentUser;
+    },
+    logout: async () => {
+      await invoke("auth:logout");
+      currentUser = null;
+    },
+    updateAvatar,
+    updateProfile: (profile) => invoke("profile:update", profile),
+    changePassword: (payload) => invoke("profile:change-password", payload),
   };
+
+  window.MuscleRecoveryApi = api;
 })();

@@ -187,7 +187,7 @@
       addExercise.disabled = false;
     } catch (error) {
       picker.innerHTML = "<option>Unable to load exercises</option>";
-      setStatus(`Unable to load exercises. Start the API at ${window.MuscleRecoveryApi.apiBaseUrl}.`, "error");
+      setStatus(error.message || "Unable to load local exercises.", "error");
       console.error(error);
     }
   }

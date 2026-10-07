@@ -487,7 +487,8 @@ async function loadComposition() {
       leanMass.textContent = "—";
       return;
     }
-    const unit = localStorage.getItem("bodycomp-weight-unit") || "lb";
+    const settings = await window.MuscleRecoveryApi.getSettings();
+    const unit = settings.weightUnit;
     const { weightFromKg } = window.MuscleMapUtils;
     weight.textContent = `${weightFromKg(latest.weightKg, unit).toFixed(2)} ${unit}`;
     leanMass.textContent = `${weightFromKg(latest.leanMassKg, unit).toFixed(2)} ${unit}`;
