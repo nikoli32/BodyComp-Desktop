@@ -26,8 +26,15 @@
     setBusy(true);
     setStatus("Creating encrypted snapshot...");
     try {
-      const result = await window.MuscleRecoveryApi.exportBackup({ passphrase: passphrase.value });
-      setStatus(result.canceled ? "Backup export canceled." : `Encrypted backup saved to ${result.filePath}.`, result.canceled ? "" : "success");
+      const result = await window.MuscleRecoveryApi.exportBackup({
+        passphrase: passphrase.value,
+      });
+      setStatus(
+        result.canceled
+          ? "Backup export canceled."
+          : `Encrypted backup saved to ${result.filePath}.`,
+        result.canceled ? "" : "success",
+      );
     } catch (error) {
       setStatus(error.message || "Unable to export backup.", "error");
     } finally {
@@ -42,7 +49,9 @@
     setBusy(true);
     setStatus("Validating backup...");
     try {
-      const result = await window.MuscleRecoveryApi.restoreBackup({ passphrase: passphrase.value });
+      const result = await window.MuscleRecoveryApi.restoreBackup({
+        passphrase: passphrase.value,
+      });
       if (result.restored) {
         setStatus("Data restored. Sign in to a restored profile.", "success");
         window.setTimeout(() => window.location.assign("auth.html"), 800);

@@ -15,7 +15,10 @@ function isAppFile(url) {
     const parsed = new URL(url);
     if (parsed.protocol !== "file:") return false;
     const target = path.resolve(fileURLToPath(parsed));
-    return path.dirname(target) === appRoot && path.extname(target).toLowerCase() === ".html";
+    return (
+      path.dirname(target) === appRoot &&
+      path.extname(target).toLowerCase() === ".html"
+    );
   } catch {
     return false;
   }

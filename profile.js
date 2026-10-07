@@ -122,8 +122,10 @@
   });
 
   // --- Initialize ---
-  window.MuscleRecoveryApi.getCurrentUser().then((user) => {
-    if (user) loadProfile(user);
-    else window.location.assign("auth.html");
-  }).catch(() => window.location.assign("auth.html"));
+  window.MuscleRecoveryApi.getCurrentUser()
+    .then((user) => {
+      if (user) loadProfile(user);
+      else window.location.assign("auth.html");
+    })
+    .catch(() => window.location.assign("auth.html"));
 })();

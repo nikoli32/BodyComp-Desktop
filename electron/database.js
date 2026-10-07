@@ -7,7 +7,9 @@ const migrationsPath = path.join(__dirname, "migrations");
 class SyncDatabase {
   constructor(databasePath, options = {}) {
     this.name = databasePath;
-    this.database = new DatabaseSync(databasePath, { readOnly: options.readonly === true });
+    this.database = new DatabaseSync(databasePath, {
+      readOnly: options.readonly === true,
+    });
   }
 
   exec(sql) {
@@ -22,7 +24,11 @@ class SyncDatabase {
     const value = statement.trim();
     if (/^[a-z_]+\s*=/i.test(value)) return this.exec(`PRAGMA ${value}`);
     const rows = this.prepare(`PRAGMA ${value}`).all();
-    return options.simple ? (rows[0] ? Object.values(rows[0])[0] : undefined) : rows;
+    return options.simple
+      ? rows[0]
+        ? Object.values(rows[0])[0]
+        : undefined
+      : rows;
   }
 
   transaction(callback) {

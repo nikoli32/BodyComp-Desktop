@@ -14,7 +14,9 @@
   function renderMode() {
     title.textContent = registering ? "Create account" : "Sign in";
     submit.textContent = registering ? "Create account" : "Sign in";
-    modeButton.textContent = registering ? "Already have an account? Sign in" : "Need an account? Create one";
+    modeButton.textContent = registering
+      ? "Already have an account? Sign in"
+      : "Need an account? Create one";
     displayNameField.hidden = !registering;
     displayName.required = registering;
     passwordHint.hidden = !registering;
@@ -22,7 +24,10 @@
     status.textContent = "";
   }
 
-  modeButton.addEventListener("click", () => { registering = !registering; renderMode(); });
+  modeButton.addEventListener("click", () => {
+    registering = !registering;
+    renderMode();
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!form.reportValidity()) return;
@@ -30,8 +35,17 @@
     status.className = "form-status";
     status.textContent = registering ? "Creating your account…" : "Signing in…";
     try {
-      if (registering) await window.MuscleRecoveryApi.register({ email: email.value, password: password.value, displayName: displayName.value.trim() });
-      else await window.MuscleRecoveryApi.login({ email: email.value, password: password.value });
+      if (registering)
+        await window.MuscleRecoveryApi.register({
+          email: email.value,
+          password: password.value,
+          displayName: displayName.value.trim(),
+        });
+      else
+        await window.MuscleRecoveryApi.login({
+          email: email.value,
+          password: password.value,
+        });
       window.location.assign("index.html");
     } catch (error) {
       submit.disabled = false;
@@ -40,7 +54,9 @@
     }
   });
 
-  window.MuscleRecoveryApi.getCurrentUser().then((user) => {
-    if (user) window.location.assign("index.html");
-  }).catch(() => {});
+  window.MuscleRecoveryApi.getCurrentUser()
+    .then((user) => {
+      if (user) window.location.assign("index.html");
+    })
+    .catch(() => {});
 })();

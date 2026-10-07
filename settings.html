@@ -41,19 +41,59 @@
             <span>Correct the muscle groups for your custom exercises.</span>
           </a>
         </nav>
-        <section class="welcome-section backup-settings" aria-labelledby="backupHeading">
+        <section
+          class="welcome-section backup-settings"
+          aria-labelledby="backupHeading"
+        >
           <h2 id="backupHeading">Encrypted backup</h2>
-          <p>Backups contain every local profile, measurement, workout, and setting. Choose a passphrase you can keep safe; it cannot be recovered.</p>
-          <p>The live database stays on this device. You can choose a synced folder for backup files, but BodyComp does not sync data automatically.</p>
+          <p>
+            Backups contain every local profile, measurement, workout, and
+            setting. Choose a passphrase you can keep safe; it cannot be
+            recovered.
+          </p>
+          <p>
+            The live database stays on this device. You can choose a synced
+            folder for backup files, but BodyComp does not sync data
+            automatically.
+          </p>
           <label for="backupPassphrase">Backup passphrase</label>
-          <input id="backupPassphrase" type="password" minlength="12" maxlength="256" autocomplete="new-password" required />
-          <label for="backupPassphraseConfirm" id="backupConfirmLabel">Confirm passphrase for export</label>
-          <input id="backupPassphraseConfirm" type="password" minlength="12" maxlength="256" autocomplete="new-password" required />
+          <input
+            id="backupPassphrase"
+            type="password"
+            minlength="12"
+            maxlength="256"
+            autocomplete="new-password"
+            required
+          />
+          <label for="backupPassphraseConfirm" id="backupConfirmLabel"
+            >Confirm passphrase for export</label
+          >
+          <input
+            id="backupPassphraseConfirm"
+            type="password"
+            minlength="12"
+            maxlength="256"
+            autocomplete="new-password"
+            required
+          />
           <div class="button-row">
-            <button class="button" id="exportBackup" type="button">Export encrypted backup</button>
-            <button class="button button-secondary" id="restoreBackup" type="button">Restore backup</button>
+            <button class="button" id="exportBackup" type="button">
+              Export encrypted backup
+            </button>
+            <button
+              class="button button-secondary"
+              id="restoreBackup"
+              type="button"
+            >
+              Restore backup
+            </button>
           </div>
-          <p id="backupStatus" class="form-status" role="status" aria-live="polite"></p>
+          <p
+            id="backupStatus"
+            class="form-status"
+            role="status"
+            aria-live="polite"
+          ></p>
         </section>
       </section>
     </main>

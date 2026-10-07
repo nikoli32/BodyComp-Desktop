@@ -33,7 +33,12 @@ function requirePassphrase(value) {
 }
 
 function deriveKey(passphrase, salt) {
-  return crypto.scryptSync(passphrase, salt, 32, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+  return crypto.scryptSync(passphrase, salt, 32, {
+    N: 32768,
+    r: 8,
+    p: 1,
+    maxmem: 64 * 1024 * 1024,
+  });
 }
 
 function temporaryPath() {
@@ -52,7 +57,10 @@ async function writeSnapshot(database, filePath, clearSession = false) {
   await database.backup(filePath);
   const snapshot = openRawDatabase(filePath);
   try {
-    if (clearSession) snapshot.prepare("UPDATE app_state SET active_profile_id = NULL WHERE id = 1").run();
+    if (clearSession)
+      snapshot
+        .prepare("UPDATE app_state SET active_profile_id = NULL WHERE id = 1")
+        .run();
     snapshot.pragma("wal_checkpoint(TRUNCATE)");
   } finally {
     snapshot.close();
@@ -62,13 +70,23 @@ async function writeSnapshot(database, filePath, clearSession = false) {
 function encodeBackup(databaseBytes, passphrase) {
   const salt = crypto.randomBytes(16);
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", deriveKey(passphrase, salt), iv);
-  const ciphertext = Buffer.concat([cipher.update(databaseBytes), cipher.final()]);
+  const cipher = crypto.createCipheriv(
+    "aes-256-gcm",
+    deriveKey(passphrase, salt),
+    iv,
+  );
+  const ciphertext = Buffer.concat([
+    cipher.update(databaseBytes),
+    cipher.final(),
+  ]);
   return {
     format: backupFormat,
     version: backupVersion,
     createdAt: new Date().toISOString(),
-    databaseSha256: crypto.createHash("sha256").update(databaseBytes).digest("hex"),
+    databaseSha256: crypto
+      .createHash("sha256")
+      .update(databaseBytes)
+      .digest("hex"),
     encryption: {
       algorithm: "aes-256-gcm",
       kdf: "scrypt",
@@ -90,10 +108,22 @@ function decodeBackup(contents, passphrase) {
   if (backup?.format !== backupFormat || backup.version !== backupVersion) {
     fail("This backup format is not supported.");
   }
-  if (backup.encryption?.algorithm !== "aes-256-gcm" || backup.encryption.kdf !== "scrypt") {
+  if (
+    backup.encryption?.algorithm !== "aes-256-gcm" ||
+    backup.encryption.kdf !== "scrypt"
+  ) {
     fail("This backup encryption format is not supported.");
   }
-  if (![backup.encryption.salt, backup.encryption.iv, backup.encryption.tag, backup.database].every((value) => typeof value === "string" && /^[A-Za-z0-9+/]+=*$/.test(value))) {
+  if (
+    ![
+      backup.encryption.salt,
+      backup.encryption.iv,
+      backup.encryption.tag,
+      backup.database,
+    ].every(
+      (value) => typeof value === "string" && /^[A-Za-z0-9+/]+=*$/.test(value),
+    )
+  ) {
     fail("This backup is incomplete or damaged.");
   }
   try {
@@ -107,8 +137,12 @@ function decodeBackup(contents, passphrase) {
       decipher.update(Buffer.from(backup.database, "base64")),
       decipher.final(),
     ]);
-    const digest = crypto.createHash("sha256").update(databaseBytes).digest("hex");
-    if (digest !== backup.databaseSha256) fail("Backup integrity check failed.");
+    const digest = crypto
+      .createHash("sha256")
+      .update(databaseBytes)
+      .digest("hex");
+    if (digest !== backup.databaseSha256)
+      fail("Backup integrity check failed.");
     return databaseBytes;
   } catch (error) {
     if (error.message === "Backup integrity check failed.") throw error;
@@ -120,14 +154,25 @@ function validateDatabase(filePath) {
   const snapshot = openRawDatabase(filePath, { readonly: true });
   try {
     const integrity = snapshot.pragma("integrity_check", { simple: true });
-    if (integrity !== "ok") fail("The backup database failed its integrity check.");
+    if (integrity !== "ok")
+      fail("The backup database failed its integrity check.");
     if (snapshot.pragma("user_version", { simple: true }) !== databaseVersion) {
       fail("This backup uses a database version that this app cannot restore.");
     }
-    const existingTables = new Set(snapshot.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => row.name));
-    if (tableNames.some((table) => !existingTables.has(table))) fail("The backup is missing required data.");
-    if (snapshot.prepare("SELECT count(*) AS count FROM profiles").get().count < 1) fail("The backup contains no profiles.");
-    if (snapshot.pragma("foreign_key_check").length) fail("The backup contains invalid references.");
+    const existingTables = new Set(
+      snapshot
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .all()
+        .map((row) => row.name),
+    );
+    if (tableNames.some((table) => !existingTables.has(table)))
+      fail("The backup is missing required data.");
+    if (
+      snapshot.prepare("SELECT count(*) AS count FROM profiles").get().count < 1
+    )
+      fail("The backup contains no profiles.");
+    if (snapshot.pragma("foreign_key_check").length)
+      fail("The backup contains invalid references.");
   } finally {
     snapshot.close();
   }
@@ -137,12 +182,34 @@ function copyDatabaseContents(database, sourcePath) {
   database.prepare("ATTACH DATABASE ? AS restore_source").run(sourcePath);
   try {
     database.transaction(() => {
-      database.prepare("UPDATE app_state SET active_profile_id = NULL WHERE id = 1").run();
-      for (const table of ["workout_sets", "workout_exercises", "workouts", "bodyweight_measurements", "exercise_muscles", "exercises", "profile_settings", "profiles"]) {
+      database
+        .prepare("UPDATE app_state SET active_profile_id = NULL WHERE id = 1")
+        .run();
+      for (const table of [
+        "workout_sets",
+        "workout_exercises",
+        "workouts",
+        "bodyweight_measurements",
+        "exercise_muscles",
+        "exercises",
+        "profile_settings",
+        "profiles",
+      ]) {
         database.exec(`DELETE FROM ${table}`);
       }
-      for (const table of ["profiles", "exercises", "exercise_muscles", "workouts", "workout_exercises", "workout_sets", "bodyweight_measurements", "profile_settings"]) {
-        database.exec(`INSERT INTO main.${table} SELECT * FROM restore_source.${table}`);
+      for (const table of [
+        "profiles",
+        "exercises",
+        "exercise_muscles",
+        "workouts",
+        "workout_exercises",
+        "workout_sets",
+        "bodyweight_measurements",
+        "profile_settings",
+      ]) {
+        database.exec(
+          `INSERT INTO main.${table} SELECT * FROM restore_source.${table}`,
+        );
       }
     })();
   } finally {
@@ -151,14 +218,19 @@ function copyDatabaseContents(database, sourcePath) {
 }
 
 function createBackupService({ database, dialog, databasePath }) {
-  const safetyDirectory = path.join(path.dirname(databasePath), "restore-safety");
+  const safetyDirectory = path.join(
+    path.dirname(databasePath),
+    "restore-safety",
+  );
 
   async function exportBackup(payload = {}) {
     const passphrase = requirePassphrase(payload.passphrase);
     const choice = await dialog.showSaveDialog({
       title: "Save encrypted BodyComp backup",
       defaultPath: `BodyComp-backup-${new Date().toISOString().slice(0, 10)}.bodycomp`,
-      filters: [{ name: "BodyComp encrypted backup", extensions: ["bodycomp"] }],
+      filters: [
+        { name: "BodyComp encrypted backup", extensions: ["bodycomp"] },
+      ],
     });
     if (choice.canceled || !choice.filePath) return { canceled: true };
 
@@ -168,7 +240,8 @@ function createBackupService({ database, dialog, databasePath }) {
       await writeSnapshot(database, snapshotPath, true);
       const databaseBytes = fs.readFileSync(snapshotPath);
       const contents = JSON.stringify(encodeBackup(databaseBytes, passphrase));
-      if (Buffer.byteLength(contents) > maximumBackupBytes) fail("The database is too large for a portable backup file.");
+      if (Buffer.byteLength(contents) > maximumBackupBytes)
+        fail("The database is too large for a portable backup file.");
       temporaryFile = `${choice.filePath}.${crypto.randomUUID()}.tmp`;
       fs.writeFileSync(temporaryFile, contents, { flag: "wx" });
       fs.renameSync(temporaryFile, choice.filePath);
@@ -185,16 +258,22 @@ function createBackupService({ database, dialog, databasePath }) {
     const choice = await dialog.showOpenDialog({
       title: "Choose a BodyComp backup",
       properties: ["openFile"],
-      filters: [{ name: "BodyComp encrypted backup", extensions: ["bodycomp"] }],
+      filters: [
+        { name: "BodyComp encrypted backup", extensions: ["bodycomp"] },
+      ],
     });
     if (choice.canceled || !choice.filePaths?.[0]) return { canceled: true };
     const backupPath = choice.filePaths[0];
     const stats = fs.statSync(backupPath);
-    if (stats.size < 1 || stats.size > maximumBackupBytes) fail("Backup file size is invalid.");
+    if (stats.size < 1 || stats.size > maximumBackupBytes)
+      fail("Backup file size is invalid.");
 
     const sourcePath = temporaryPath();
     try {
-      const databaseBytes = decodeBackup(fs.readFileSync(backupPath, "utf8"), passphrase);
+      const databaseBytes = decodeBackup(
+        fs.readFileSync(backupPath, "utf8"),
+        passphrase,
+      );
       fs.writeFileSync(sourcePath, databaseBytes, { flag: "wx" });
       validateDatabase(sourcePath);
 
@@ -202,7 +281,8 @@ function createBackupService({ database, dialog, databasePath }) {
         type: "warning",
         title: "Replace local BodyComp data?",
         message: "Restoring will replace all profiles and data on this device.",
-        detail: "A local safety snapshot will be created before replacement. You will need to sign in again after restore.",
+        detail:
+          "A local safety snapshot will be created before replacement. You will need to sign in again after restore.",
         buttons: ["Restore and replace", "Cancel"],
         defaultId: 1,
         cancelId: 1,
@@ -210,13 +290,21 @@ function createBackupService({ database, dialog, databasePath }) {
       if (confirmation.response !== 0) return { canceled: true };
 
       fs.mkdirSync(safetyDirectory, { recursive: true });
-      const safetyPath = path.join(safetyDirectory, `before-restore-${new Date().toISOString().replace(/[:.]/g, "-")}.sqlite`);
+      const safetyPath = path.join(
+        safetyDirectory,
+        `before-restore-${new Date().toISOString().replace(/[:.]/g, "-")}.sqlite`,
+      );
       await database.backup(safetyPath);
-      const safetyFiles = fs.readdirSync(safetyDirectory)
-        .filter((name) => name.startsWith("before-restore-") && name.endsWith(".sqlite"))
+      const safetyFiles = fs
+        .readdirSync(safetyDirectory)
+        .filter(
+          (name) =>
+            name.startsWith("before-restore-") && name.endsWith(".sqlite"),
+        )
         .sort()
         .reverse();
-      for (const name of safetyFiles.slice(3)) fs.rmSync(path.join(safetyDirectory, name), { force: true });
+      for (const name of safetyFiles.slice(3))
+        fs.rmSync(path.join(safetyDirectory, name), { force: true });
       copyDatabaseContents(database, sourcePath);
       return { canceled: false, restored: true };
     } finally {
@@ -227,4 +315,9 @@ function createBackupService({ database, dialog, databasePath }) {
   return { exportBackup, restoreBackup };
 }
 
-module.exports = { createBackupService, decodeBackup, encodeBackup, validateDatabase };
+module.exports = {
+  createBackupService,
+  decodeBackup,
+  encodeBackup,
+  validateDatabase,
+};

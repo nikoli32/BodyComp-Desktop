@@ -2,7 +2,8 @@ const packageInfo = require("./package.json");
 
 const publisher = process.env.MSIX_PUBLISHER || "CN=BodyComp Development";
 const identityName = process.env.MSIX_IDENTITY_NAME || "BodyCompDesktopDev";
-const packageVersion = process.env.MSIX_PACKAGE_VERSION || `${packageInfo.version}.0`;
+const packageVersion =
+  process.env.MSIX_PACKAGE_VERSION || `${packageInfo.version}.0`;
 const certificateFile = process.env.MSIX_CERTIFICATE_FILE;
 const certificatePassword = process.env.MSIX_CERTIFICATE_PASSWORD;
 
@@ -11,8 +12,12 @@ if (!/^\d+\.\d+\.\d+\.\d+$/.test(packageVersion)) {
 }
 
 const msixConfig = {
-  ...(process.env.MSIX_WINDOWS_KIT_VERSION ? { windowsKitVersion: process.env.MSIX_WINDOWS_KIT_VERSION } : {}),
-  ...(process.env.MSIX_WINDOWS_KIT_PATH ? { windowsKitPath: process.env.MSIX_WINDOWS_KIT_PATH } : {}),
+  ...(process.env.MSIX_WINDOWS_KIT_VERSION
+    ? { windowsKitVersion: process.env.MSIX_WINDOWS_KIT_VERSION }
+    : {}),
+  ...(process.env.MSIX_WINDOWS_KIT_PATH
+    ? { windowsKitPath: process.env.MSIX_WINDOWS_KIT_PATH }
+    : {}),
   manifestVariables: {
     packageIdentity: identityName,
     publisher,

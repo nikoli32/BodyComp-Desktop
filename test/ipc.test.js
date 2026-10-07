@@ -30,16 +30,27 @@ test("IPC invokes only allowlisted operations from the local main frame", async 
   assert.ok(allowedMethods.has("workouts:create"));
   await registeredHandler(event, "workouts:list", []);
   assert.deepEqual(serviceCalls, [["workouts:list", []]]);
-  await assert.rejects(registeredHandler(event, "fs:readFile", []), /Unsupported application operation/);
+  await assert.rejects(
+    registeredHandler(event, "fs:readFile", []),
+    /Unsupported application operation/,
+  );
 
   const subframe = { url: frame.url };
   await assert.rejects(
-    registeredHandler({ senderFrame: subframe, sender: { mainFrame: frame } }, "workouts:list", []),
+    registeredHandler(
+      { senderFrame: subframe, sender: { mainFrame: frame } },
+      "workouts:list",
+      [],
+    ),
     /main frame/,
   );
   const remoteFrame = { url: "https://example.com" };
   await assert.rejects(
-    registeredHandler({ senderFrame: remoteFrame, sender: { mainFrame: remoteFrame } }, "workouts:list", []),
+    registeredHandler(
+      { senderFrame: remoteFrame, sender: { mainFrame: remoteFrame } },
+      "workouts:list",
+      [],
+    ),
     /local app/,
   );
 });
@@ -47,13 +58,21 @@ test("IPC invokes only allowlisted operations from the local main frame", async 
 test("IPC refuses requests until the local service is ready", async () => {
   let handler;
   registerIpcHandlers({
-    ipcMain: { handle: (_channel, registered) => { handler = registered; } },
+    ipcMain: {
+      handle: (_channel, registered) => {
+        handler = registered;
+      },
+    },
     getService: () => null,
     isAppFile: () => true,
   });
   const frame = { url: "file:///app/index.html" };
   await assert.rejects(
-    handler({ senderFrame: frame, sender: { mainFrame: frame } }, "workouts:list", []),
+    handler(
+      { senderFrame: frame, sender: { mainFrame: frame } },
+      "workouts:list",
+      [],
+    ),
     /not ready/,
   );
 });

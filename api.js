@@ -3,7 +3,9 @@
 
   function invoke(method, ...args) {
     if (!window.bodyCompDesktop) {
-      return Promise.reject(new Error("The desktop data service is unavailable."));
+      return Promise.reject(
+        new Error("The desktop data service is unavailable."),
+      );
     }
     return window.bodyCompDesktop.invoke(method, ...args);
   }
@@ -27,7 +29,9 @@
     }
     if (legacyUnit !== "lb" && legacyUnit !== "kg") return settings;
 
-    const migrated = await invoke("settings:update", { weightUnit: legacyUnit });
+    const migrated = await invoke("settings:update", {
+      weightUnit: legacyUnit,
+    });
     try {
       window.localStorage.removeItem("bodycomp-weight-unit");
     } catch {}
@@ -37,12 +41,15 @@
   const api = {
     getRecovery: () => invoke("recovery:get"),
     getBodyweightMeasurements: () => invoke("bodyweight:list"),
-    createBodyweightMeasurement: (measurement) => invoke("bodyweight:create", measurement),
-    updateBodyweightMeasurement: (id, measurement) => invoke("bodyweight:update", id, measurement),
+    createBodyweightMeasurement: (measurement) =>
+      invoke("bodyweight:create", measurement),
+    updateBodyweightMeasurement: (id, measurement) =>
+      invoke("bodyweight:update", id, measurement),
     deleteBodyweightMeasurement: (id) => invoke("bodyweight:delete", id),
     getExercises: () => invoke("exercises:list"),
     getCustomExercises: () => invoke("custom-exercises:list"),
-    updateCustomExercise: (id, muscles) => invoke("custom-exercises:update", id, muscles),
+    updateCustomExercise: (id, muscles) =>
+      invoke("custom-exercises:update", id, muscles),
     deleteCustomExercise: (id) => invoke("custom-exercises:delete", id),
     getMuscleGroups: () => invoke("muscle-groups:list"),
     createExercise: (exercise) => invoke("exercises:create", exercise),
