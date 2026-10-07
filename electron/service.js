@@ -243,13 +243,21 @@ function readMuscleRecovery(database, profileId, nowMilliseconds = Date.now()) {
 
   const transitionsByMuscle = new Map();
   for (const [key, history] of performancesByExercise) {
-    history.sort((left, right) => Date.parse(left.startedAt) - Date.parse(right.startedAt));
+    history.sort(
+      (left, right) => Date.parse(left.startedAt) - Date.parse(right.startedAt),
+    );
     const muscleGroupId = Number(key.split(":")[0]);
     for (let index = 1; index < history.length; index += 1) {
       const previous = history[index - 1];
       const current = history[index];
-      const elapsedHours = (Date.parse(current.startedAt) - Date.parse(previous.startedAt)) / 3_600_000;
-      const transition = estimateTransitionHours(previous.strength, current.strength, elapsedHours);
+      const elapsedHours =
+        (Date.parse(current.startedAt) - Date.parse(previous.startedAt)) /
+        3_600_000;
+      const transition = estimateTransitionHours(
+        previous.strength,
+        current.strength,
+        elapsedHours,
+      );
       if (transition === null) continue;
       const estimates = transitionsByMuscle.get(muscleGroupId) || [];
       estimates.push(transition);
@@ -284,23 +292,37 @@ function readMuscleRecovery(database, profileId, nowMilliseconds = Date.now()) {
   }
 
   return muscleGroups.map((group) => {
-    const learned = estimateRecoveryDuration(transitionsByMuscle.get(group.id) || []);
-    const storedSessions = [...(sessionsByMuscle.get(group.id)?.values() || [])];
+    const learned = estimateRecoveryDuration(
+      transitionsByMuscle.get(group.id) || [],
+    );
+    const storedSessions = [
+      ...(sessionsByMuscle.get(group.id)?.values() || []),
+    ];
     const sessions = storedSessions.map((session) => ({
       ...session,
       stimulus: combineDemands(session.stimulusParts),
       recoveryHours: learned.recoveryHours,
     }));
     const recovery = calculateMuscleRecovery(sessions, nowMilliseconds);
-    const totalSets = storedSessions.reduce((total, session) => total + session.totalSets, 0);
-    const rirTotal = storedSessions.reduce((total, session) => total + session.rirTotal, 0);
-    const contributingExercises = [...new Set(storedSessions.flatMap((session) => [...session.exercises]))];
+    const totalSets = storedSessions.reduce(
+      (total, session) => total + session.totalSets,
+      0,
+    );
+    const rirTotal = storedSessions.reduce(
+      (total, session) => total + session.rirTotal,
+      0,
+    );
+    const contributingExercises = [
+      ...new Set(storedSessions.flatMap((session) => [...session.exercises])),
+    ];
     return {
       ...group,
       ...recovery,
       totalSets,
       contributingExercises,
-      averageRir: totalSets ? Math.round((rirTotal / totalSets) * 10) / 10 : null,
+      averageRir: totalSets
+        ? Math.round((rirTotal / totalSets) * 10) / 10
+        : null,
       recoveryHours: learned.recoveryHours,
       recoveryBaselineHours: learned.recoveryHours,
       recoveryEstimateLearned: learned.recoveryEstimateLearned,
@@ -389,11 +411,12 @@ function createService({ database, dialog, databasePath }) {
     return muscles.map((muscle) => ({
       muscleGroupId: Number(muscle.muscleGroupId),
       role: muscle.role,
-      loadFactor: validNumber(muscle.loadFactor, "Muscle load factor", {
-        optional: true,
-        min: 0.1,
-        max: 2,
-      }) ?? 1,
+      loadFactor:
+        validNumber(muscle.loadFactor, "Muscle load factor", {
+          optional: true,
+          min: 0.1,
+          max: 2,
+        }) ?? 1,
     }));
   }
 
@@ -402,7 +425,12 @@ function createService({ database, dialog, databasePath }) {
       "INSERT INTO exercise_muscles (exercise_id, muscle_group_id, role, load_factor) VALUES (?, ?, ?, ?)",
     );
     for (const muscle of muscles)
-      insert.run(exerciseId, muscle.muscleGroupId, muscle.role, muscle.loadFactor ?? 1);
+      insert.run(
+        exerciseId,
+        muscle.muscleGroupId,
+        muscle.role,
+        muscle.loadFactor ?? 1,
+      );
   }
 
   function ownExercise(exerciseId, profileId = requireProfile()) {

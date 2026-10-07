@@ -15,9 +15,8 @@ function estimateOneRepMax(weightKg, reps, rir) {
   if (!Number.isFinite(repetitionCount) || repetitionCount <= 0) return null;
 
   const hasRir = rir !== null && rir !== undefined && rir !== "";
-  const reserve = hasRir && Number.isFinite(Number(rir))
-    ? clamp(Number(rir), 0, 10)
-    : 2;
+  const reserve =
+    hasRir && Number.isFinite(Number(rir)) ? clamp(Number(rir), 0, 10) : 2;
   const effectiveReps = clamp(repetitionCount + (10 - reserve), 1, 12);
   return weight * (1 + effectiveReps / 30);
 }
@@ -28,9 +27,8 @@ function calculateSetStimulus({ weightKg, reps, rir, loadFactor = 1 }) {
 
   const weight = Number(weightKg);
   const hasRir = rir !== null && rir !== undefined && rir !== "";
-  const reserve = hasRir && Number.isFinite(Number(rir))
-    ? clamp(Number(rir), 0, 10)
-    : 2;
+  const reserve =
+    hasRir && Number.isFinite(Number(rir)) ? clamp(Number(rir), 0, 10) : 2;
   const effectiveReps = clamp(Number(reps) + (10 - reserve), 1, 12);
   const factor = Number.isFinite(Number(loadFactor))
     ? clamp(Number(loadFactor), 0.1, 2)
@@ -39,12 +37,17 @@ function calculateSetStimulus({ weightKg, reps, rir, loadFactor = 1 }) {
   const effortFactor = 1 + (10 - reserve) / 10;
   const repetitionFactor = effectiveReps / 12;
 
-  return clamp(14 * relativeIntensity * effortFactor * repetitionFactor * factor, 0, 70);
+  return clamp(
+    14 * relativeIntensity * effortFactor * repetitionFactor * factor,
+    0,
+    70,
+  );
 }
 
 function combineDemands(demands) {
   const remaining = demands.reduce(
-    (product, demand) => product * (1 - clamp(Number(demand) || 0, 0, 100) / 100),
+    (product, demand) =>
+      product * (1 - clamp(Number(demand) || 0, 0, 100) / 100),
     1,
   );
   return 100 * (1 - remaining);
@@ -71,7 +74,9 @@ function demandAfterHours(sessions, nowMilliseconds, additionalHours) {
 }
 
 function findEstimatedReadyAt(sessions, nowMilliseconds) {
-  if (demandAfterHours(sessions, nowMilliseconds, 0) <= READY_DEMAND_THRESHOLD) {
+  if (
+    demandAfterHours(sessions, nowMilliseconds, 0) <= READY_DEMAND_THRESHOLD
+  ) {
     return new Date(nowMilliseconds).toISOString();
   }
 
@@ -79,7 +84,10 @@ function findEstimatedReadyAt(sessions, nowMilliseconds) {
   let high = MAX_RECOVERY_HOURS;
   for (let iteration = 0; iteration < 32; iteration += 1) {
     const middle = (low + high) / 2;
-    if (demandAfterHours(sessions, nowMilliseconds, middle) <= READY_DEMAND_THRESHOLD) {
+    if (
+      demandAfterHours(sessions, nowMilliseconds, middle) <=
+      READY_DEMAND_THRESHOLD
+    ) {
       high = middle;
     } else {
       low = middle;
@@ -93,16 +101,23 @@ function estimateTransitionHours(previousStrength, nextStrength, elapsedHours) {
   const next = Number(nextStrength);
   const elapsed = Number(elapsedHours);
   if (
-    !Number.isFinite(previous) || previous <= 0 ||
-    !Number.isFinite(next) || next <= 0 ||
-    !Number.isFinite(elapsed) || elapsed <= 0
-  ) return null;
+    !Number.isFinite(previous) ||
+    previous <= 0 ||
+    !Number.isFinite(next) ||
+    next <= 0 ||
+    !Number.isFinite(elapsed) ||
+    elapsed <= 0
+  )
+    return null;
 
   const performanceRatio = next / previous;
-  const declinePenalty = performanceRatio < 0.98
-    ? (1 - performanceRatio) * 36
-    : 0;
-  return clamp(elapsed + declinePenalty, MIN_RECOVERY_HOURS, MAX_RECOVERY_HOURS);
+  const declinePenalty =
+    performanceRatio < 0.98 ? (1 - performanceRatio) * 36 : 0;
+  return clamp(
+    elapsed + declinePenalty,
+    MIN_RECOVERY_HOURS,
+    MAX_RECOVERY_HOURS,
+  );
 }
 
 function median(values) {
@@ -127,14 +142,18 @@ function estimateRecoveryDuration(transitions) {
 }
 
 function calculateMuscleRecovery(sessions, nowMilliseconds = Date.now()) {
-  const recoveryDemand = Math.round(demandAfterHours(sessions, nowMilliseconds, 0));
+  const recoveryDemand = Math.round(
+    demandAfterHours(sessions, nowMilliseconds, 0),
+  );
   const lastTrainedAt = sessions.length
-    ? sessions.map((session) => session.lastTrainedAt || session.startedAt)
-      .sort((left, right) => Date.parse(right) - Date.parse(left))[0]
+    ? sessions
+        .map((session) => session.lastTrainedAt || session.startedAt)
+        .sort((left, right) => Date.parse(right) - Date.parse(left))[0]
     : null;
   return {
     recoveryDemand,
-    status: recoveryDemand <= READY_DEMAND_THRESHOLD ? "ready" : "needs_recovery",
+    status:
+      recoveryDemand <= READY_DEMAND_THRESHOLD ? "ready" : "needs_recovery",
     lastTrainedAt,
     estimatedReadyAt: findEstimatedReadyAt(sessions, nowMilliseconds),
   };

@@ -221,7 +221,9 @@ test("new app database path leaves the legacy database untouched", (t) => {
   const legacyPath = path.join(directory, "bodycomp.sqlite");
   const legacy = openRawDatabase(legacyPath);
   legacy.exec("CREATE TABLE legacy_exercises (name TEXT NOT NULL)");
-  legacy.prepare("INSERT INTO legacy_exercises (name) VALUES (?)").run("Saved exercise");
+  legacy
+    .prepare("INSERT INTO legacy_exercises (name) VALUES (?)")
+    .run("Saved exercise");
   legacy.pragma("user_version = 0");
   legacy.close();
 
@@ -380,7 +382,9 @@ test("restore upgrades encrypted schema-v2 backups before replacing data", async
   ]);
   assert.equal(database.pragma("user_version", { simple: true }), 3);
   assert.equal(
-    database.prepare("SELECT min(load_factor) AS factor FROM exercise_muscles").get().factor,
+    database
+      .prepare("SELECT min(load_factor) AS factor FROM exercise_muscles")
+      .get().factor,
     1,
   );
 });

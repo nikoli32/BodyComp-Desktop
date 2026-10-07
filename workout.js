@@ -64,7 +64,10 @@
       loadFactorInput.max = "2";
       loadFactorInput.step = "0.1";
       loadFactorInput.value = String(assignment.loadFactor ?? 1);
-      loadFactorInput.setAttribute("aria-label", "Muscle load factor from 0.1 to 2.0");
+      loadFactorInput.setAttribute(
+        "aria-label",
+        "Muscle load factor from 0.1 to 2.0",
+      );
       loadFactorInput.addEventListener("input", () => {
         assignment.loadFactor = Number(loadFactorInput.value);
       });

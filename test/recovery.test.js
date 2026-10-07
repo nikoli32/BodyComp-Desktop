@@ -33,14 +33,17 @@ test("set stimulus responds to effort and exercise-muscle load factor", () => {
 test("workout sessions combine multiplicatively and decay linearly", () => {
   assert.equal(combineDemands([50, 50]), 75);
   const now = Date.parse("2026-10-06T12:00:00.000Z");
-  const recovery = calculateMuscleRecovery([
-    {
-      startedAt: new Date(now - 24 * 3_600_000).toISOString(),
-      lastTrainedAt: new Date(now - 24 * 3_600_000).toISOString(),
-      stimulus: 60,
-      recoveryHours: 48,
-    },
-  ], now);
+  const recovery = calculateMuscleRecovery(
+    [
+      {
+        startedAt: new Date(now - 24 * 3_600_000).toISOString(),
+        lastTrainedAt: new Date(now - 24 * 3_600_000).toISOString(),
+        stimulus: 60,
+        recoveryHours: 48,
+      },
+    ],
+    now,
+  );
   assert.equal(recovery.recoveryDemand, 30);
   assert.equal(recovery.status, "needs_recovery");
   assert.equal(recovery.estimatedReadyAt, "2026-10-06T20:00:00.000Z");

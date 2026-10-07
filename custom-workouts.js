@@ -50,7 +50,10 @@
     loadFactorInput.max = "2";
     loadFactorInput.step = "0.1";
     loadFactorInput.value = String(assignment.loadFactor ?? 1);
-    loadFactorInput.setAttribute("aria-label", "Muscle load factor from 0.1 to 2.0");
+    loadFactorInput.setAttribute(
+      "aria-label",
+      "Muscle load factor from 0.1 to 2.0",
+    );
     loadFactorInput.addEventListener("input", () => {
       assignment.loadFactor = Number(loadFactorInput.value);
     });
@@ -174,8 +177,16 @@
         exerciseStatus.className = "form-status error";
         return;
       }
-      if (muscles.some((muscle) => !Number.isFinite(muscle.loadFactor) || muscle.loadFactor < 0.1 || muscle.loadFactor > 2)) {
-        exerciseStatus.textContent = "Enter a load factor from 0.1 to 2.0 for every muscle.";
+      if (
+        muscles.some(
+          (muscle) =>
+            !Number.isFinite(muscle.loadFactor) ||
+            muscle.loadFactor < 0.1 ||
+            muscle.loadFactor > 2,
+        )
+      ) {
+        exerciseStatus.textContent =
+          "Enter a load factor from 0.1 to 2.0 for every muscle.";
         exerciseStatus.className = "form-status error";
         return;
       }
@@ -205,7 +216,7 @@
           muscleGroupId:
             muscleGroups.find((group) => group.slug === muscle.slug)?.id ?? "",
           role: muscle.role,
-            loadFactor: muscle.loadFactor ?? 1,
+          loadFactor: muscle.loadFactor ?? 1,
         }));
         renderRows();
         exerciseStatus.textContent = "Muscle groups saved.";
