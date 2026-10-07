@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Body Comp</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>Muscle Recovery Map</h1>
+        </div>
+      </header>
+
+      <section class="home-page">
+        <div class="welcome-section">
+          <h2>Welcome to Muscle Recovery Map</h2>
+          <p>Explore your body's recovery status with detailed muscle maps</p>
+        </div>
+
+        <div class="view-buttons">
+          <a href="front_view.html" class="view-button">
+            <span class="button-icon" aria-hidden="true">&#8593;</span>
+            <span class="button-text">Front View</span>
+          </a>
+          <a href="back_view.html" class="view-button">
+            <span class="button-icon" aria-hidden="true">&#8595;</span>
+            <span class="button-text">Back View</span>
+          </a>
+          <a href="workout.html" class="view-button">
+            <span class="button-icon" aria-hidden="true">+</span>
+            <span class="button-text">Log Workout</span>
+          </a>
+          <a href="workout-history.html" class="view-button">
+            <span class="button-icon" aria-hidden="true">&#8635;</span>
+            <span class="button-text">Workout History</span>
+          </a>
+        </div>
+
+        <section class="panel recovery-summary">
+          <h2>Recovery Status</h2>
+          <div class="stat-grid">
+            <article>
+              <span>Last workout</span>
+              <strong id="lastWorkout">—</strong>
+            </article>
+            <article>
+              <span>Fresh groups</span>
+              <strong id="totalGroups">&mdash;</strong>
+            </article>
+          </div>
+        </section>
+        <p id="apiStatus" class="api-status" role="status">
+          Loading recovery data…
+        </p>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

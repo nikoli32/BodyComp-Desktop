@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in - Muscle Recovery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell auth-shell">
+      <section class="panel auth-card">
+        <p class="eyebrow">Body Comp</p>
+        <h1 id="authTitle">Sign in</h1>
+        <p class="auth-copy">Save workouts privately and see your personal recovery map.</p>
+        <form id="authForm" class="auth-form">
+          <label id="displayNameField" hidden>Display name
+            <input id="displayName" maxlength="100" autocomplete="name" />
+          </label>
+          <label>Email
+            <input id="email" type="email" autocomplete="email" required />
+          </label>
+          <label>Password
+            <input id="password" type="password" autocomplete="current-password" minlength="12" required />
+          </label>
+          <p id="passwordHint" class="field-hint" hidden>Use at least 12 characters.</p>
+          <p id="authStatus" class="form-status" role="status"></p>
+          <button id="authSubmit" class="button" type="submit">Sign in</button>
+        </form>
+        <button id="authMode" class="text-button" type="button">Need an account? Create one</button>
+      </section>
+    </main>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+  </body>
+</html>

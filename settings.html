@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - Body Comp</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>Settings</h1>
+        </div>
+      </header>
+      <section class="home-page settings-page">
+        <div class="welcome-section">
+          <h2>Account</h2>
+          <p>Manage your profile and saved training sessions.</p>
+        </div>
+        <nav class="view-buttons" aria-label="Account settings">
+          <a class="view-button" href="body-composition.html">
+            <span class="button-icon" aria-hidden="true">&#8595;</span>
+            <span class="button-text">Body Composition</span>
+            <span>Record body weight and body-fat measurements.</span>
+          </a>
+          <a class="view-button" href="profile.html">
+            <span class="button-icon" aria-hidden="true">&#8594;</span>
+            <span class="button-text">Profile</span>
+            <span>Update your personal details and password.</span>
+          </a>
+          <a class="view-button" href="workout-history.html">
+            <span class="button-icon" aria-hidden="true">&#8635;</span>
+            <span class="button-text">Workout History</span>
+            <span>Review and edit your saved workouts.</span>
+          </a>
+          <a class="view-button" href="custom-workouts.html">
+            <span class="button-icon" aria-hidden="true">&#9881;</span>
+            <span class="button-text">Custom Workouts</span>
+            <span>Correct the muscle groups for your custom exercises.</span>
+          </a>
+        </nav>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+  </body>
+</html>

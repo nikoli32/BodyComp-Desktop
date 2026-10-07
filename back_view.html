@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Back View - Muscle Recovery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-view="back">
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>Muscle Recovery Map</h1>
+        </div>
+        <nav class="view-toggle" aria-label="Body view">
+          <a href="front_view.html">Front</a>
+          <a class="active" href="back_view.html" aria-current="page">Back</a>
+        </nav>
+      </header>
+
+      <section class="workspace">
+        <aside class="sidebar" aria-label="Recovery summary">
+          <section class="panel">
+            <h2>Recovery</h2>
+            <div class="stat-grid">
+              <article>
+                <span>Last workout</span>
+                <strong id="lastWorkout">—</strong>
+              </article>
+              <article>
+                <span>Fresh groups</span>
+                <strong id="totalGroups">&mdash;</strong>
+              </article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Muscle Groups</h2>
+            <div
+              id="muscleList"
+              class="muscle-list"
+              aria-label="Muscle groups"
+            ></div>
+          </section>
+        </aside>
+
+        <section
+          class="model-panel"
+          aria-label="Interactive back body muscle map"
+        >
+          <div class="canvas-toolbar">
+            <div>
+              <span id="visibleSide">Back view</span>
+              <strong id="muscleName">Full Body</strong>
+            </div>
+            <button
+              id="resetView"
+              class="icon-button"
+              type="button"
+              aria-label="Reset selected muscle"
+              title="Reset selected muscle"
+            >
+              &#8634;
+            </button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas
+              id="muscleCanvas"
+              tabindex="0"
+              aria-label="Interactive back-facing human muscle map"
+              aria-describedby="mapInstructions"
+            ></canvas>
+            <p id="mapInstructions" class="visually-hidden">
+              Use the muscle group buttons to select a muscle. On the map, use
+              arrow keys to move through muscle groups and Enter or Space to
+              select one.
+            </p>
+          </div>
+        </section>
+
+        <aside class="details-panel" aria-label="Selected muscle details">
+          <section class="panel selected-card" aria-live="polite">
+            <p class="eyebrow">Selected Muscle</p>
+            <h2 id="detailTitle">Full Body</h2>
+            <p id="muscleDescription">
+              Hover over a muscle group to highlight it. Click a region to focus
+              the view and inspect that group.
+            </p>
+          </section>
+
+          <section class="panel">
+            <h2>Composition</h2>
+            <div class="metric-list">
+              <article>
+                <span>Body fat</span>
+                <strong id="compositionBodyFat">—</strong>
+              </article>
+              <article>
+                <span>Weight</span>
+                <strong id="compositionWeight">—</strong>
+              </article>
+              <article>
+                <span>Lean mass</span>
+                <strong id="compositionLeanMass">—</strong>
+              </article>
+            </div>
+            <a class="composition-link" href="body-composition.html"
+              >Update measurements</a
+            >
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="ui-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

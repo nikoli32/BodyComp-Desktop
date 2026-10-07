@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Profile</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>My Profile</h1>
+        </div>
+        <div class="view-toggle">
+          <a href="index.html" class="active">Home</a>
+          <a href="workout-history.html">Workout History</a>
+        </div>
+      </header>
+
+      <section class="profile-page">
+        <!-- Sidebar -->
+        <aside class="profile-sidebar">
+          <!-- Tabs -->
+          <div class="profile-tabs">
+            <button class="profile-tab active" data-tab="personal">
+              Personal Details
+            </button>
+            <button class="profile-tab" data-tab="password">Password</button>
+          </div>
+
+          <!-- Account info -->
+          <div class="profile-account-info">
+            <div class="account-item">
+              <span class="account-label">Join Date</span>
+              <span class="account-value" id="joinDate">—</span>
+            </div>
+            <div class="account-item">
+              <span class="account-label">User ID</span>
+              <span class="account-value" id="userId">—</span>
+            </div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+          </div>
+        </aside>
+
+        <!-- Main content -->
+        <div class="profile-content">
+          <!-- Personal Details panel -->
+          <div class="profile-panel active" id="personalPanel">
+            <h2>Personal Details</h2>
+            <form id="profileForm" class="profile-form">
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" readonly />
+              </div>
+              <div class="form-group">
+                <label for="displayName">Display Name</label>
+                <input id="displayName" type="text" />
+              </div>
+              <button type="submit" class="save-btn">Save Changes</button>
+            </form>
+          </div>
+
+          <!-- Password panel -->
+          <div class="profile-panel" id="passwordPanel">
+            <h2>Change Password</h2>
+            <form id="passwordForm" class="profile-form">
+              <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input id="currentPassword" type="password" />
+              </div>
+              <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input id="newPassword" type="password" />
+              </div>
+              <div class="form-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input id="confirmPassword" type="password" />
+              </div>
+              <button type="submit" class="save-btn">Update Password</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="profile.js"></script>
+  </body>
+</html>

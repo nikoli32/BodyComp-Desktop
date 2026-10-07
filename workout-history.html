@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workout History - Muscle Recovery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar workout-page-titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>Workout History</h1>
+        </div>
+      </header>
+      <section class="workout-page">
+        <div class="panel history-panel">
+          <div class="workout-heading">
+            <div>
+              <p class="eyebrow">Saved sessions</p>
+              <h2>Review and edit</h2>
+            </div>
+          </div>
+          <p id="historyStatus" class="form-status" role="status">
+            Loading workout history...
+          </p>
+          <div
+            id="workoutHistory"
+            class="workout-exercises"
+            aria-live="polite"
+          ></div>
+        </div>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="workout-history.js"></script>
+  </body>
+</html>

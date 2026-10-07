@@ -1,0 +1,19 @@
+{
+  "name": "bodycomp-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "desktop:dev": "npm run backend:build && electron .",
+    "backend:build": "npm --prefix backend run build",
+    "test": "node --test test/*.test.js",
+    "test:backend": "npm --prefix backend test",
+    "check:backend": "npm --prefix backend run check"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0"
+  },
+  "allowScripts": {
+    "electron@39.8.10": true
+  }
+}

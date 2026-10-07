@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Workouts - Body Comp</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">Settings</p>
+          <h1>Custom Workouts</h1>
+        </div>
+        <nav class="view-toggle workout-nav" aria-label="Settings navigation">
+          <a href="settings.html">Settings</a>
+          <a href="workout.html">Log workout</a>
+        </nav>
+      </header>
+      <section class="workout-page">
+        <div class="panel custom-workouts-panel">
+          <div class="workout-heading">
+            <div>
+              <p class="eyebrow">Your exercises</p>
+              <h2>Edit muscle targets</h2>
+            </div>
+          </div>
+          <p
+            id="customWorkoutsStatus"
+            class="form-status"
+            role="status"
+            aria-live="polite"
+          >
+            Loading custom workouts...
+          </p>
+          <div id="customWorkoutList" class="custom-workout-list"></div>
+        </div>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="custom-workouts.js"></script>
+  </body>
+</html>

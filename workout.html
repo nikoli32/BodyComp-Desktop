@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log Workout - Muscle Recovery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="titlebar workout-page-titlebar">
+        <div>
+          <p class="eyebrow">Body Comp</p>
+          <h1>Log a Workout</h1>
+        </div>
+      </header>
+
+      <section class="workout-page">
+        <form id="workoutForm" class="panel workout-form" novalidate>
+          <div class="workout-heading">
+            <div>
+              <p class="eyebrow">Current workout</p>
+              <h2>Build your session</h2>
+            </div>
+            <label class="notes-field"
+              >Workout notes
+              <input
+                id="workoutNotes"
+                name="notes"
+                maxlength="2000"
+                placeholder="Optional notes"
+              />
+            </label>
+          </div>
+
+          <div class="exercise-picker">
+            <label for="exercisePicker">Add exercise</label>
+            <div>
+              <select id="exercisePicker" required disabled>
+                <option>Loading exercises…</option>
+              </select>
+              <button
+                id="addExercise"
+                class="button button-secondary"
+                type="button"
+                disabled
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div class="custom-exercise">
+            <div class="custom-exercise-header">
+              <h3>Create custom workout</h3>
+              <button
+                id="toggleCustomExercise"
+                class="button button-secondary"
+                type="button"
+              >
+                + Create custom workout
+              </button>
+            </div>
+            <section
+              id="customExerciseForm"
+              class="custom-exercise-form"
+              hidden
+              aria-label="Create custom workout"
+            >
+              <label class="custom-exercise-name-field">
+                Workout name
+                <input
+                  id="customExerciseName"
+                  name="customExerciseName"
+                  maxlength="200"
+                  placeholder="Bench Press"
+                  required
+                />
+              </label>
+
+              <div
+                id="customMuscleRows"
+                class="custom-muscle-rows"
+                aria-live="polite"
+              ></div>
+
+              <div class="custom-exercise-actions">
+                <button id="addPrimaryMuscle" class="text-button" type="button">
+                  + Add primary muscle
+                </button>
+                <button
+                  id="addSecondaryMuscle"
+                  class="text-button"
+                  type="button"
+                >
+                  + Add secondary muscle
+                </button>
+                <button id="saveCustomExercise" class="button" type="button">
+                  Save workout
+                </button>
+              </div>
+
+              <p
+                id="customExerciseStatus"
+                class="form-status"
+                role="status"
+              ></p>
+            </section>
+          </div>
+
+          <div
+            id="workoutExercises"
+            class="workout-exercises"
+            aria-live="polite"
+          ></div>
+          <p id="workoutEmpty" class="empty-state">
+            Choose an exercise to begin logging your workout.
+          </p>
+
+          <div class="workout-actions">
+            <p id="workoutStatus" class="form-status" role="status"></p>
+            <button id="finishWorkout" class="button" type="submit" disabled>
+              Finish workout
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="nav-config.js"></script>
+    <script src="nav-utils.js"></script>
+    <script src="api.js"></script>
+    <script src="profile-menu.js"></script>
+    <script src="workout.js"></script>
+  </body>
+</html>
